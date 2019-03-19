@@ -60,9 +60,12 @@ class RainbowDQNAgentParameters(CategoricalDQNAgentParameters):
     def __init__(self):
         super().__init__()
         self.algorithm = RainbowDQNAlgorithmParameters()
+
+        # ParameterNoiseParameters is changing the network wrapper parameters. This line needs to be done first.
+        self.network_wrappers = {"main": RainbowDQNNetworkParameters()}
+
         self.exploration = ParameterNoiseParameters(self)
         self.memory = PrioritizedExperienceReplayParameters()
-        self.network_wrappers = {"main": RainbowDQNNetworkParameters()}
 
     @property
     def path(self):
@@ -94,6 +97,9 @@ class RainbowDQNAgent(CategoricalDQNAgent):
             (self.networks['main'].target_network, batch.next_states(network_keys)),
             (self.networks['main'].online_network, batch.states(network_keys))
         ])
+
+        # add Q value samples for logging
+        self.q_values.add_sample(self.distribution_prediction_to_q_values(TD_targets))
 
         # only update the action that we have actually done in this transition (using the Double-DQN selected actions)
         target_actions = ddqn_selected_actions
